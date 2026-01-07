@@ -20,7 +20,7 @@ type LoginFormData = z.infer<typeof loginSchema>
 export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const { signIn } = useAuth()
-  const { session, isLoading: authLoading } = useAuthStore()
+  const { session, profile, isLoading: authLoading } = useAuthStore()
 
   const {
     register,
@@ -34,7 +34,8 @@ export function LoginPage() {
     return null
   }
 
-  if (session) {
+  // Só redireciona se tiver sessão E perfil de admin/manager
+  if (session && profile && (profile.role === 'admin' || profile.role === 'manager')) {
     return <Navigate to="/" replace />
   }
 

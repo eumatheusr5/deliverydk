@@ -2,7 +2,7 @@ import { forwardRef } from 'react'
 import { Spinner } from './spinner'
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost'
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
   isLoading?: boolean
   children: React.ReactNode
 }
@@ -15,6 +15,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       primary: 'bg-primary text-white hover:bg-primary-hover',
       secondary: 'bg-surface border border-border text-text-primary hover:bg-border/50',
       ghost: 'bg-transparent text-text-primary hover:bg-surface',
+      danger: 'bg-error text-white hover:bg-error/90',
     }
 
     return (

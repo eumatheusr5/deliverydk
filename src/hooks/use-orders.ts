@@ -1,8 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { supabase, getAccessToken } from '@/lib/supabase'
 import type { Order, OrderInsert, OrderUpdate, OrderItem, OrderStatus, OrderWithItems } from '@/types/database'
 
 const ORDERS_KEY = ['orders']
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 type OrderRow = {
   id: string
@@ -26,19 +28,30 @@ export function useOrders(status?: OrderStatus | 'active') {
   return useQuery({
     queryKey: status ? [...ORDERS_KEY, status] : ORDERS_KEY,
     queryFn: async () => {
-      let query = supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false })
-
+      const token = getAccessToken()
+      
+      let url = `${supabaseUrl}/rest/v1/orders?select=*&order=created_at.desc`
+      
       if (status === 'active') {
-        query = query.in('status', ['pending', 'confirmed', 'preparing', 'ready', 'delivering'])
+        url += `&status=in.(pending,confirmed,preparing,ready,delivering)`
       } else if (status) {
-        query = query.eq('status', status)
+        url += `&status=eq.${status}`
       }
 
-      const { data, error } = await query
-      if (error) throw error
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': token ? `Bearer ${token}` : `Bearer ${supabaseAnonKey}`,
+        },
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Erro ao buscar pedidos')
+      }
+
+      const data = await response.json()
       return (data ?? []) as Order[]
     },
   })
