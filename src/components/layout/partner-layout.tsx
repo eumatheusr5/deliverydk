@@ -9,6 +9,7 @@ import {
   X,
   ExternalLink,
   ClipboardList,
+  Wallet,
 } from 'lucide-react'
 import { usePartnerStore } from '@/stores/partner-store'
 
@@ -16,6 +17,7 @@ const navigation = [
   { name: 'Dashboard', href: '/parceiro', icon: LayoutDashboard },
   { name: 'Meus Pedidos', href: '/parceiro/pedidos', icon: ClipboardList },
   { name: 'Produtos & Preços', href: '/parceiro/produtos', icon: Package },
+  { name: 'Financeiro', href: '/parceiro/financeiro', icon: Wallet },
   { name: 'Personalização', href: '/parceiro/personalizacao', icon: Palette },
 ]
 

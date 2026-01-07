@@ -86,8 +86,24 @@ export function useAuth() {
   }
 
   async function signOut() {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    // Limpar localStorage
+    const storageKey = `sb-${new URL(supabaseUrl).hostname.split('.')[0]}-auth-token`
+    localStorage.removeItem(storageKey)
+    
+    // Limpar stores
+    useAuthStore.getState().setSession(null)
+    useAuthStore.getState().setUser(null)
+    useAuthStore.getState().setProfile(null)
+    
+    // Tentar signout no servidor (não bloquear se falhar)
+    try {
+      await supabase.auth.signOut()
+    } catch {
+      // Ignorar erros
+    }
+    
+    // Redirecionar para login
+    window.location.href = '/login'
   }
 
   return {

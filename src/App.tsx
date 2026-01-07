@@ -9,12 +9,12 @@ import { PartnerProtectedRoute } from '@/components/auth/partner-protected-route
 
 // Admin Pages
 import { LoginPage } from '@/pages/login'
-import { RegisterPage } from '@/pages/register'
 import { DashboardPage } from '@/pages/dashboard'
 import { ProductsPage } from '@/pages/products'
 import { OrdersPage } from '@/pages/orders'
 import { CustomersPage } from '@/pages/customers'
 import { PartnersPage } from '@/pages/partners'
+import { PaymentsPage } from '@/pages/payments'
 import { SettingsPage } from '@/pages/settings'
 
 // Partner Pages
@@ -24,6 +24,7 @@ import { PartnerDashboardPage } from '@/pages/partner/dashboard'
 import { PartnerOrdersPage } from '@/pages/partner/orders'
 import { PartnerProductsPage } from '@/pages/partner/products'
 import { PartnerPersonalizationPage } from '@/pages/partner/personalization'
+import { PartnerFinanceiroPage } from '@/pages/partner/financeiro'
 
 // Public Pages
 import { PublicMenuPage } from '@/pages/menu'
@@ -47,7 +48,6 @@ function AppRoutes() {
 
       {/* Admin Auth Routes */}
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
 
       {/* Partner Auth Routes */}
       <Route path="/parceiro/login" element={<PartnerLoginPage />} />
@@ -65,6 +65,7 @@ function AppRoutes() {
         <Route path="/parceiro/pedidos" element={<PartnerOrdersPage />} />
         <Route path="/parceiro/produtos" element={<PartnerProductsPage />} />
         <Route path="/parceiro/personalizacao" element={<PartnerPersonalizationPage />} />
+        <Route path="/parceiro/financeiro" element={<PartnerFinanceiroPage />} />
       </Route>
 
       {/* Admin Protected Routes */}
@@ -80,6 +81,7 @@ function AppRoutes() {
         <Route path="/produtos" element={<ProductsPage />} />
         <Route path="/clientes" element={<CustomersPage />} />
         <Route path="/parceiros" element={<PartnersPage />} />
+        <Route path="/pagamentos" element={<PaymentsPage />} />
         <Route path="/configuracoes" element={<SettingsPage />} />
       </Route>
     </Routes>

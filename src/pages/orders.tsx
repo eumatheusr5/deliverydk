@@ -16,6 +16,7 @@ import {
   Receipt,
   Eye,
   ChevronDown,
+  Store,
 } from 'lucide-react'
 
 // Truck still used in StatusDropdown icon
@@ -395,6 +396,9 @@ export function OrdersPage() {
                   <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3">
                     Cliente
                   </th>
+                  <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3 hidden md:table-cell">
+                    Parceiro
+                  </th>
                   <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
                     Endereço
                   </th>
@@ -438,6 +442,18 @@ export function OrdersPage() {
                         <p className="font-medium text-sm">{order.customer_name}</p>
                         <p className="text-xs text-text-secondary">{order.customer_phone}</p>
                       </div>
+                    </td>
+
+                    {/* Partner */}
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      {'partner' in order && order.partner?.store_name ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs text-text-secondary">
+                          <Store size={12} />
+                          {order.partner.store_name}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-text-secondary">-</span>
+                      )}
                     </td>
 
                     {/* Address */}

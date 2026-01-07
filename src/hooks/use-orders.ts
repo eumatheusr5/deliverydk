@@ -9,6 +9,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 type OrderRow = {
   id: string
   order_number: number
+  partner_id: string | null
   customer_name: string
   customer_phone: string
   customer_address: string | null
@@ -22,6 +23,9 @@ type OrderRow = {
   notes: string | null
   created_at: string
   updated_at: string
+  partner?: {
+    store_name: string
+  }
 }
 
 export function useOrders(status?: OrderStatus | 'active') {
@@ -30,7 +34,7 @@ export function useOrders(status?: OrderStatus | 'active') {
     queryFn: async () => {
       const token = getAccessToken()
       
-      let url = `${supabaseUrl}/rest/v1/orders?select=*&order=created_at.desc`
+      let url = `${supabaseUrl}/rest/v1/orders?select=*,partner:partners(store_name)&order=created_at.desc`
       
       if (status === 'active') {
         url += `&status=in.(pending,confirmed,preparing,ready,delivering)`
@@ -52,7 +56,7 @@ export function useOrders(status?: OrderStatus | 'active') {
       }
 
       const data = await response.json()
-      return (data ?? []) as Order[]
+      return (data ?? []) as (Order & { partner?: { store_name: string } })[]
     },
   })
 }

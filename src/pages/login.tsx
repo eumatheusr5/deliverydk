@@ -89,9 +89,8 @@ export function LoginPage() {
           </form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="text-text-secondary">Não tem uma conta? </span>
-            <Link to="/register" className="text-accent hover:text-accent-hover font-medium">
-              Cadastre-se
+            <Link to="/parceiro/login" className="text-text-secondary hover:text-primary">
+              É um parceiro? Acesse aqui
             </Link>
           </div>
         </div>

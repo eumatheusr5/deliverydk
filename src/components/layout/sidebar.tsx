@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, LogOut, Package, ShoppingBag, ClipboardList, Users, Store, Settings } from 'lucide-react'
+import { LayoutDashboard, LogOut, Package, ShoppingBag, ClipboardList, Users, Store, Settings, Wallet } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 
 const navigation = [
@@ -8,6 +8,7 @@ const navigation = [
   { name: 'Produtos', href: '/produtos', icon: ShoppingBag },
   { name: 'Clientes', href: '/clientes', icon: Users },
   { name: 'Parceiros', href: '/parceiros', icon: Store },
+  { name: 'Pagamentos', href: '/pagamentos', icon: Wallet },
   { name: 'Configurações', href: '/configuracoes', icon: Settings },
 ]
 
