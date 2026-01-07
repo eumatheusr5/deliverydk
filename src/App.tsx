@@ -7,6 +7,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route'
 import { LoginPage } from '@/pages/login'
 import { RegisterPage } from '@/pages/register'
 import { DashboardPage } from '@/pages/dashboard'
+import { ProductsPage } from '@/pages/products'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +36,7 @@ function AppRoutes() {
         }
       >
         <Route path="/" element={<DashboardPage />} />
+        <Route path="/produtos" element={<ProductsPage />} />
       </Route>
     </Routes>
   )

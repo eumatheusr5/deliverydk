@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, LogOut, Package } from 'lucide-react'
+import { LayoutDashboard, LogOut, Package, ShoppingBag } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Produtos', href: '/produtos', icon: ShoppingBag },
 ]
 
 export function Sidebar() {
@@ -11,11 +12,8 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile overlay */}
-      <div className="lg:hidden fixed inset-0 bg-primary/20 backdrop-blur-sm z-40 hidden peer-checked:block" />
-      
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 z-50 h-screen w-64 bg-background border-r border-border flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out peer-checked:translate-x-0">
+      <aside className="fixed left-0 top-0 z-50 h-screen w-64 bg-background border-r border-border flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out">
         {/* Logo */}
         <div className="h-16 flex items-center gap-3 px-6 border-b border-border">
           <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
@@ -71,4 +69,3 @@ export function Sidebar() {
     </>
   )
 }
-

@@ -17,19 +17,24 @@ export function useAuthInit() {
       setUser(session?.user ?? null)
       
       if (session?.user) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
 
-        if (!mounted) return
+          if (!mounted) return
 
-        if (!error && data) {
-          setProfile(data)
+          if (!error && data) {
+            setProfile(data)
+          }
+        } catch (err) {
+          console.error('Error fetching profile:', err)
         }
       }
       
+      if (!mounted) return
       setLoading(false)
     }
 

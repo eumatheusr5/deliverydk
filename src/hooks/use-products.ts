@@ -1,0 +1,158 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase'
+import type { Product, ProductInsert, ProductUpdate } from '@/types/database'
+
+const PRODUCTS_KEY = ['products']
+
+export function useProducts(categoryId?: string) {
+  return useQuery({
+    queryKey: categoryId ? [...PRODUCTS_KEY, categoryId] : PRODUCTS_KEY,
+    queryFn: async () => {
+      let query = supabase
+        .from('products')
+        .select('*')
+        .order('sort_order', { ascending: true })
+
+      if (categoryId) {
+        query = query.eq('category_id', categoryId)
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+      return data as Product[]
+    },
+  })
+}
+
+export function useProduct(id: string | undefined) {
+  return useQuery({
+    queryKey: [...PRODUCTS_KEY, 'detail', id],
+    queryFn: async () => {
+      if (!id) return null
+
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+      if (error) throw error
+      return data as Product
+    },
+    enabled: !!id,
+  })
+}
+
+export function useCreateProduct() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (product: ProductInsert) => {
+      // Pegar o maior sort_order da categoria
+      const { data: existing } = await supabase
+        .from('products')
+        .select('sort_order')
+        .eq('category_id', product.category_id)
+        .order('sort_order', { ascending: false })
+        .limit(1)
+
+      const maxOrder = (existing as { sort_order: number }[] | null)?.[0]?.sort_order ?? -1
+      const newSortOrder = maxOrder + 1
+
+      const { data, error } = await supabase
+        .from('products')
+        .insert({ ...product, sort_order: newSortOrder } as never)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data as Product
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PRODUCTS_KEY })
+    },
+  })
+}
+
+export function useUpdateProduct() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, ...product }: ProductUpdate & { id: string }) => {
+      const { data, error } = await supabase
+        .from('products')
+        .update(product as never)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data as Product
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PRODUCTS_KEY })
+    },
+  })
+}
+
+export function useDeleteProduct() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PRODUCTS_KEY })
+    },
+  })
+}
+
+export function useReorderProducts() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (products: { id: string; sort_order: number }[]) => {
+      const promises = products.map(({ id, sort_order }) =>
+        supabase
+          .from('products')
+          .update({ sort_order } as never)
+          .eq('id', id)
+      )
+
+      const results = await Promise.all(promises)
+      const errors = results.filter((r) => r.error)
+
+      if (errors.length > 0) {
+        throw errors[0]?.error
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PRODUCTS_KEY })
+    },
+  })
+}
+
+export function useToggleProductStatus() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_active } as never)
+        .eq('id', id)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PRODUCTS_KEY })
+    },
+  })
+}
