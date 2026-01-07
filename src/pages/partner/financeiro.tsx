@@ -59,7 +59,6 @@ type Transaction = {
 type PaymentSettings = {
   min_withdrawal_amount: number
   min_days_to_withdraw: number
-  partner_commission_percent: number
 }
 
 type DateFilter = 'today' | 'week' | 'month' | 'year' | 'custom'

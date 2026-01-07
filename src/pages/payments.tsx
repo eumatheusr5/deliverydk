@@ -59,7 +59,6 @@ type PaymentSettings = {
   id: string
   min_withdrawal_amount: number
   min_days_to_withdraw: number
-  partner_commission_percent: number
 }
 
 function useWithdrawals(status?: WithdrawalStatus | 'all') {
@@ -360,7 +359,6 @@ function SettingsModal({
 }) {
   const [minAmount, setMinAmount] = useState(settings?.min_withdrawal_amount?.toString() || '50')
   const [minDays, setMinDays] = useState(settings?.min_days_to_withdraw?.toString() || '7')
-  const [commission, setCommission] = useState(settings?.partner_commission_percent?.toString() || '70')
   const updateSettings = useUpdatePaymentSettings()
 
   const handleSave = async () => {
@@ -368,7 +366,6 @@ function SettingsModal({
       await updateSettings.mutateAsync({
         min_withdrawal_amount: parseFloat(minAmount),
         min_days_to_withdraw: parseInt(minDays),
-        partner_commission_percent: parseFloat(commission),
       })
       onClose()
     } catch {
@@ -386,17 +383,16 @@ function SettingsModal({
           onChange={(e) => setMinAmount(e.target.value)}
         />
         <Input
-          label="Dias mínimos após venda para saque"
+          label="Dias mínimos após venda para liberar saque"
           type="number"
           value={minDays}
           onChange={(e) => setMinDays(e.target.value)}
         />
-        <Input
-          label="Comissão do parceiro (%)"
-          type="number"
-          value={commission}
-          onChange={(e) => setCommission(e.target.value)}
-        />
+        <div className="bg-surface rounded-lg p-3">
+          <p className="text-sm text-text-secondary">
+            <strong>Como funciona:</strong> O lucro do parceiro é automaticamente calculado como a diferença entre o preço de venda (definido pelo parceiro) e o preço de custo (definido por você).
+          </p>
+        </div>
         <Button onClick={handleSave} isLoading={updateSettings.isPending} className="w-full">
           Salvar Configurações
         </Button>
@@ -499,8 +495,8 @@ export function PaymentsPage() {
               <TrendingUp size={20} className="text-primary" />
             </div>
             <div>
-              <p className="text-sm text-text-secondary">Comissão Parceiro</p>
-              <p className="text-xl font-semibold">{settings?.partner_commission_percent || 70}%</p>
+              <p className="text-sm text-text-secondary">Parceiros Ativos</p>
+              <p className="text-xl font-semibold">{balances?.length || 0}</p>
             </div>
           </div>
         </div>
