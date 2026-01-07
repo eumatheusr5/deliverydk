@@ -1,6 +1,47 @@
 export interface Database {
   public: {
     Tables: {
+      customers: {
+        Row: {
+          id: string
+          name: string
+          phone: string
+          email: string | null
+          cep: string | null
+          address: string | null
+          neighborhood: string | null
+          city: string | null
+          complement: string | null
+          reference: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          name: string
+          phone: string
+          email?: string | null
+          cep?: string | null
+          address?: string | null
+          neighborhood?: string | null
+          city?: string | null
+          complement?: string | null
+          reference?: string | null
+          notes?: string | null
+        }
+        Update: {
+          name?: string
+          phone?: string
+          email?: string | null
+          cep?: string | null
+          address?: string | null
+          neighborhood?: string | null
+          city?: string | null
+          complement?: string | null
+          reference?: string | null
+          notes?: string | null
+        }
+      }
       profiles: {
         Row: {
           id: string
@@ -211,6 +252,18 @@ export type OrderItemUpdate = Database['public']['Tables']['order_items']['Updat
 // Order with items
 export type OrderWithItems = Order & {
   items: OrderItem[]
+}
+
+// Customers
+export type Customer = Database['public']['Tables']['customers']['Row']
+export type CustomerInsert = Database['public']['Tables']['customers']['Insert']
+export type CustomerUpdate = Database['public']['Tables']['customers']['Update']
+
+// Customer com estatísticas
+export type CustomerWithStats = Customer & {
+  total_orders: number
+  days_since_last_order: number | null
+  last_order_date: string | null
 }
 
 // Status labels em português

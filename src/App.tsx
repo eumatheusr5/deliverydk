@@ -9,6 +9,7 @@ import { RegisterPage } from '@/pages/register'
 import { DashboardPage } from '@/pages/dashboard'
 import { ProductsPage } from '@/pages/products'
 import { OrdersPage } from '@/pages/orders'
+import { CustomersPage } from '@/pages/customers'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,6 +40,7 @@ function AppRoutes() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/pedidos" element={<OrdersPage />} />
         <Route path="/produtos" element={<ProductsPage />} />
+        <Route path="/clientes" element={<CustomersPage />} />
       </Route>
     </Routes>
   )
