@@ -1,8 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import type { Customer, CustomerInsert, CustomerUpdate, CustomerWithStats } from '@/types/database'
+import type { Customer, CustomerInsert, CustomerUpdate, CustomerWithStats, Order } from '@/types/database'
 
 const CUSTOMERS_KEY = ['customers']
+
+// Tipos para as queries
+type OrderStats = Pick<Order, 'customer_phone' | 'created_at'>
+type OrderDetail = Pick<Order, 'id' | 'created_at' | 'total' | 'status'>
+type CustomerStats = Pick<Customer, 'id' | 'created_at'>
 
 export function useCustomers() {
   return useQuery({
@@ -27,7 +32,7 @@ export function useCustomers() {
       // Agrupa pedidos por telefone
       const ordersByPhone: Record<string, { count: number; lastOrderDate: string | null }> = {}
       
-      for (const order of ordersStats ?? []) {
+      for (const order of (ordersStats as OrderStats[]) ?? []) {
         const phone = order.customer_phone
         if (!ordersByPhone[phone]) {
           ordersByPhone[phone] = {
@@ -39,7 +44,7 @@ export function useCustomers() {
       }
 
       // Combina clientes com estatísticas
-      const customersWithStats: CustomerWithStats[] = (customers ?? []).map((customer) => {
+      const customersWithStats: CustomerWithStats[] = ((customers as Customer[]) ?? []).map((customer) => {
         const stats = ordersByPhone[customer.phone] || { count: 0, lastOrderDate: null }
         
         let daysSinceLastOrder: number | null = null
@@ -77,17 +82,20 @@ export function useCustomer(id: string | undefined) {
 
       if (error) throw error
 
+      const customer = data as Customer
+
       // Busca estatísticas de pedidos para este cliente
       const { data: orders, error: ordersError } = await supabase
         .from('orders')
         .select('id, created_at, total, status')
-        .eq('customer_phone', data.phone)
+        .eq('customer_phone', customer.phone)
         .order('created_at', { ascending: false })
 
       if (ordersError) throw ordersError
 
-      const totalOrders = orders?.length ?? 0
-      const lastOrderDate = orders?.[0]?.created_at ?? null
+      const ordersList = (orders as OrderDetail[]) ?? []
+      const totalOrders = ordersList.length
+      const lastOrderDate = ordersList[0]?.created_at ?? null
       
       let daysSinceLastOrder: number | null = null
       if (lastOrderDate) {
@@ -98,12 +106,12 @@ export function useCustomer(id: string | undefined) {
       }
 
       return {
-        ...data,
+        ...customer,
         total_orders: totalOrders,
         days_since_last_order: daysSinceLastOrder,
         last_order_date: lastOrderDate,
-        orders: orders ?? [],
-      } as CustomerWithStats & { orders: { id: string; created_at: string; total: number; status: string }[] }
+        orders: ordersList,
+      } as CustomerWithStats & { orders: OrderDetail[] }
     },
     enabled: !!id,
   })
@@ -179,15 +187,16 @@ export function useCustomersStats() {
 
       if (error) throw error
 
-      const total = customers?.length ?? 0
+      const customersList = (customers as CustomerStats[]) ?? []
+      const total = customersList.length
       
       // Clientes dos últimos 30 dias
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
       
-      const newCustomers = customers?.filter(c => 
+      const newCustomers = customersList.filter(c => 
         new Date(c.created_at) >= thirtyDaysAgo
-      ).length ?? 0
+      ).length
 
       return {
         total,
@@ -196,4 +205,3 @@ export function useCustomersStats() {
     },
   })
 }
-
