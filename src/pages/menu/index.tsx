@@ -440,7 +440,7 @@ export function PublicMenuPage() {
 
     if (search) {
       const searchLower = search.toLowerCase()
-      products = products.filter((p) =>
+      products = products.filter((p: Product & { selling_price: number; categories?: Category }) =>
         p.name.toLowerCase().includes(searchLower) ||
         (p.description && p.description.toLowerCase().includes(searchLower))
       )

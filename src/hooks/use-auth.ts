@@ -1,4 +1,4 @@
-import { supabase, getAccessToken } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth-store'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL

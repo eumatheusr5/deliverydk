@@ -24,7 +24,6 @@ export function PartnerLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
-  const { fetchPartner } = usePartnerStore()
 
   const {
     register,
