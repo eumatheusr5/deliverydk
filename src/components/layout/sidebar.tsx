@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, LogOut, Package, ShoppingBag } from 'lucide-react'
+import { LayoutDashboard, LogOut, Package, ShoppingBag, ClipboardList } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Pedidos', href: '/pedidos', icon: ClipboardList },
   { name: 'Produtos', href: '/produtos', icon: ShoppingBag },
 ]
 
