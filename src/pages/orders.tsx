@@ -17,7 +17,9 @@ import {
   Eye,
   ChevronDown,
 } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
+
+// Truck still used in StatusDropdown icon
+import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 import { Button } from '@/components/ui/button'
@@ -393,10 +395,10 @@ export function OrdersPage() {
                   <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3">
                     Cliente
                   </th>
-                  <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3 hidden md:table-cell">
-                    Tipo
-                  </th>
                   <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
+                    Endereço
+                  </th>
+                  <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3 hidden md:table-cell">
                     Pagamento
                   </th>
                   <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3">
@@ -420,9 +422,14 @@ export function OrdersPage() {
 
                     {/* Date */}
                     <td className="px-4 py-3">
-                      <span className="text-sm text-text-secondary">
-                        {formatDistanceToNow(new Date(order.created_at), { addSuffix: true, locale: ptBR })}
-                      </span>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {format(new Date(order.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </p>
+                        <p className="text-xs text-text-secondary">
+                          {formatDistanceToNow(new Date(order.created_at), { addSuffix: true, locale: ptBR })}
+                        </p>
+                      </div>
                     </td>
 
                     {/* Customer */}
@@ -433,18 +440,24 @@ export function OrdersPage() {
                       </div>
                     </td>
 
-                    {/* Type */}
-                    <td className="px-4 py-3 hidden md:table-cell">
-                      <span className={`inline-flex items-center gap-1 text-xs ${
-                        order.delivery_type === 'delivery' ? 'text-accent' : 'text-text-secondary'
-                      }`}>
-                        {order.delivery_type === 'delivery' ? <Truck size={12} /> : <Package size={12} />}
-                        {order.delivery_type === 'delivery' ? 'Entrega' : 'Retirada'}
-                      </span>
+                    {/* Address */}
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      {order.delivery_type === 'delivery' ? (
+                        <div className="max-w-[200px]">
+                          <p className="text-sm truncate" title={order.customer_address || ''}>
+                            {order.customer_address || '-'}
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-text-secondary">
+                          <Package size={12} />
+                          Retirada no local
+                        </span>
+                      )}
                     </td>
 
                     {/* Payment */}
-                    <td className="px-4 py-3 hidden lg:table-cell">
+                    <td className="px-4 py-3 hidden md:table-cell">
                       <span className="inline-flex items-center gap-1.5 text-xs text-text-secondary">
                         {getPaymentIcon(order.payment_method)}
                         {PAYMENT_METHOD_LABELS[order.payment_method]}
