@@ -30,9 +30,10 @@ import {
   useUpdatePartnerStatus,
   useDeletePartner,
   usePartnerStats,
+  type PartnerWithFinancials,
 } from '@/hooks/use-partners'
 import { formatCurrency } from '@/lib/format'
-import type { Partner, PartnerStatus } from '@/types/database'
+import type { PartnerStatus } from '@/types/database'
 import { PARTNER_STATUS_LABELS, PARTNER_STATUS_COLORS } from '@/types/database'
 
 type FilterTab = 'all' | PartnerStatus
@@ -64,7 +65,7 @@ function ActionsDropdown({
   onStatusChange,
   onDelete,
 }: { 
-  partner: Partner
+  partner: PartnerWithFinancials
   onView: () => void
   onStatusChange: (status: PartnerStatus) => void
   onDelete: () => void
@@ -347,7 +348,7 @@ export function PartnersPage() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [confirmAction, setConfirmAction] = useState<{
     type: 'status' | 'delete'
-    partner: Partner
+    partner: PartnerWithFinancials
     newStatus?: PartnerStatus
   } | null>(null)
 
@@ -366,16 +367,16 @@ export function PartnersPage() {
     )
   })
 
-  const handleView = (partner: Partner) => {
+  const handleView = (partner: PartnerWithFinancials) => {
     setSelectedPartnerId(partner.id)
     setIsDetailsOpen(true)
   }
 
-  const handleStatusChange = (partner: Partner, newStatus: PartnerStatus) => {
+  const handleStatusChange = (partner: PartnerWithFinancials, newStatus: PartnerStatus) => {
     setConfirmAction({ type: 'status', partner, newStatus })
   }
 
-  const handleDelete = (partner: Partner) => {
+  const handleDelete = (partner: PartnerWithFinancials) => {
     setConfirmAction({ type: 'delete', partner })
   }
 
@@ -512,7 +513,10 @@ export function PartnersPage() {
                     Pedidos
                   </th>
                   <th className="text-center text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
-                    Faturamento
+                    Total Vendido
+                  </th>
+                  <th className="text-center text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
+                    Lucro Parceiro
                   </th>
                   <th className="text-center text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3">
                     Status
@@ -567,10 +571,17 @@ export function PartnersPage() {
                       <span className="font-semibold">{partner.total_orders}</span>
                     </td>
 
-                    {/* Faturamento */}
+                    {/* Total Vendido */}
+                    <td className="px-4 py-3 text-center hidden lg:table-cell">
+                      <span className="font-semibold text-primary">
+                        {formatCurrency(partner.total_revenue)}
+                      </span>
+                    </td>
+
+                    {/* Lucro do Parceiro */}
                     <td className="px-4 py-3 text-center hidden lg:table-cell">
                       <span className="font-semibold text-success">
-                        {formatCurrency(partner.total_revenue)}
+                        {formatCurrency(partner.partner_profit)}
                       </span>
                     </td>
 

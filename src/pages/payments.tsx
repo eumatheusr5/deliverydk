@@ -52,6 +52,7 @@ type PartnerBalance = {
   partner: {
     store_name: string
     owner_name: string
+    total_revenue: number // Total vendido pelo parceiro
   }
 }
 
@@ -91,7 +92,7 @@ function usePartnerBalances() {
     queryKey: ['admin-partner-balances'],
     queryFn: async () => {
       const token = getAccessToken()
-      const url = `${supabaseUrl}/rest/v1/partner_balances?select=*,partner:partners(store_name,owner_name)&order=available_balance.desc`
+      const url = `${supabaseUrl}/rest/v1/partner_balances?select=*,partner:partners(store_name,owner_name,total_revenue)&order=available_balance.desc`
 
       const response = await fetch(url, {
         headers: {
@@ -628,10 +629,11 @@ export function PaymentsPage() {
               <thead className="bg-surface border-b border-border">
                 <tr>
                   <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">Parceiro</th>
+                  <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">Total Vendido</th>
+                  <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">Lucro Parceiro</th>
                   <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">Disponível</th>
                   <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">Pendente</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">Total Ganho</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">Total Sacado</th>
+                  <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">Sacado</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -649,18 +651,23 @@ export function PaymentsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right">
+                      <span className="font-semibold text-primary">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(balance.partner?.total_revenue || 0))}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
                       <span className="font-semibold text-success">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(balance.total_earned))}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-success">
                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(balance.available_balance))}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <span className="text-warning">
                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(balance.pending_balance))}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span className="text-text-secondary">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(balance.total_earned))}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">

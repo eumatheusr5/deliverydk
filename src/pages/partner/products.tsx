@@ -117,7 +117,13 @@ function useUpsertPartnerProduct() {
       return result[0]
     },
     onSuccess: (_, variables) => {
+      // Invalidar todos os caches relacionados ao parceiro
       queryClient.invalidateQueries({ queryKey: ['partner-products', variables.partner_id] })
+      queryClient.invalidateQueries({ queryKey: ['all-products'] })
+      // Invalidar o menu público com o partner_id específico
+      queryClient.invalidateQueries({ queryKey: ['public-menu', variables.partner_id] })
+      // Também invalidar sem o partnerId para garantir
+      queryClient.invalidateQueries({ queryKey: ['public-menu'] })
     },
   })
 }
@@ -287,6 +293,7 @@ function SetPriceModal({
 }
 
 export function PartnerProductsPage() {
+  const queryClient = useQueryClient()
   const { partner } = usePartnerStore()
   const { data: allProducts, isLoading: productsLoading } = useAllProducts()
   const { data: partnerProducts, isLoading: configLoading } = usePartnerProducts(partner?.id)
@@ -355,6 +362,11 @@ export function PartnerProductsPage() {
       })
       
       if (!response.ok) throw new Error('Erro ao atualizar')
+      
+      // Invalidar caches para atualizar o menu público
+      queryClient.invalidateQueries({ queryKey: ['partner-products', partner.id] })
+      queryClient.invalidateQueries({ queryKey: ['public-menu', partner.id] })
+      queryClient.invalidateQueries({ queryKey: ['public-menu'] })
       
       toast.success(product.partnerConfig.is_active ? 'Produto ocultado' : 'Produto visível')
     } catch {

@@ -129,6 +129,9 @@ function usePublicPartner(slug: string | undefined) {
 function usePublicMenu(partnerId: string | undefined) {
   return useQuery({
     queryKey: ['public-menu', partnerId],
+    staleTime: 0, // Sempre buscar dados frescos
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       if (!partnerId) return { products: [], categories: [] }
 

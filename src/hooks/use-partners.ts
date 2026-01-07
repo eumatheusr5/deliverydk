@@ -20,13 +20,18 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 // PARTNERS HOOKS
 // =============================================
 
+export type PartnerWithFinancials = Partner & {
+  partner_profit: number // Lucro do parceiro (preço venda - preço custo)
+}
+
 export function usePartners(status?: PartnerStatus | 'all') {
   return useQuery({
     queryKey: status ? [...PARTNERS_KEY, status] : PARTNERS_KEY,
     queryFn: async () => {
       const token = getAccessToken()
+      
+      // Buscar parceiros
       let url = `${supabaseUrl}/rest/v1/partners?select=*&order=created_at.desc`
-
       if (status && status !== 'all') {
         url += `&status=eq.${status}`
       } else {
@@ -46,7 +51,32 @@ export function usePartners(status?: PartnerStatus | 'all') {
         throw new Error(error.message || 'Erro ao buscar parceiros')
       }
 
-      return response.json() as Promise<Partner[]>
+      const partners: Partner[] = await response.json()
+
+      // Buscar saldos dos parceiros para obter o lucro (total_earned)
+      const balancesResponse = await fetch(`${supabaseUrl}/rest/v1/partner_balances?select=partner_id,total_earned`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': token ? `Bearer ${token}` : `Bearer ${supabaseAnonKey}`,
+        },
+      })
+
+      let balances: { partner_id: string; total_earned: number }[] = []
+      if (balancesResponse.ok) {
+        balances = await balancesResponse.json()
+      }
+
+      // Combinar parceiros com dados financeiros
+      const partnersWithFinancials: PartnerWithFinancials[] = partners.map((partner) => {
+        const balance = balances.find((b) => b.partner_id === partner.id)
+        return {
+          ...partner,
+          partner_profit: balance ? Number(balance.total_earned) : 0,
+        }
+      })
+
+      return partnersWithFinancials
     },
   })
 }
