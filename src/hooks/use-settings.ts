@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { supabase, getAccessToken } from '@/lib/supabase'
 import type { 
   Setting, 
   BusinessHours, 
@@ -9,21 +9,29 @@ import type {
 } from '@/types/database'
 
 const SETTINGS_KEY = ['settings']
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 // Buscar todas as configurações
 export function useSettings() {
   return useQuery({
     queryKey: SETTINGS_KEY,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('settings')
-        .select('*')
+      const token = getAccessToken()
+      const response = await fetch(`${supabaseUrl}/rest/v1/settings?select=*`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': token ? `Bearer ${token}` : `Bearer ${supabaseAnonKey}`,
+        },
+      })
 
-      if (error) throw error
+      if (!response.ok) throw new Error('Erro ao buscar configurações')
+      const data = await response.json() as Setting[]
       
       // Converter para objeto com chaves
       const settings: Record<string, Setting> = {}
-      for (const s of (data as Setting[]) ?? []) {
+      for (const s of data ?? []) {
         settings[s.key] = s
       }
       
@@ -37,14 +45,18 @@ export function useSetting<T>(key: string) {
   return useQuery({
     queryKey: [...SETTINGS_KEY, key],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('settings')
-        .select('*')
-        .eq('key', key)
-        .single()
+      const token = getAccessToken()
+      const response = await fetch(`${supabaseUrl}/rest/v1/settings?key=eq.${key}&select=*`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': token ? `Bearer ${token}` : `Bearer ${supabaseAnonKey}`,
+        },
+      })
 
-      if (error) throw error
-      return data as Setting & { value: T }
+      if (!response.ok) throw new Error('Erro ao buscar configuração')
+      const data = await response.json()
+      return data[0] as Setting & { value: T }
     },
   })
 }

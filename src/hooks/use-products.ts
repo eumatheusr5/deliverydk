@@ -1,26 +1,36 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { supabase, getAccessToken } from '@/lib/supabase'
 import type { Product, ProductInsert, ProductUpdate } from '@/types/database'
 
 const PRODUCTS_KEY = ['products']
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export function useProducts(categoryId?: string) {
   return useQuery({
     queryKey: categoryId ? [...PRODUCTS_KEY, categoryId] : PRODUCTS_KEY,
     queryFn: async () => {
-      let query = supabase
-        .from('products')
-        .select('*')
-        .order('sort_order', { ascending: true })
-
+      const token = getAccessToken()
+      let url = `${supabaseUrl}/rest/v1/products?select=*&order=sort_order.asc`
+      
       if (categoryId) {
-        query = query.eq('category_id', categoryId)
+        url += `&category_id=eq.${categoryId}`
       }
 
-      const { data, error } = await query
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': token ? `Bearer ${token}` : `Bearer ${supabaseAnonKey}`,
+        },
+      })
 
-      if (error) throw error
-      return data as Product[]
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Erro ao buscar produtos')
+      }
+
+      return response.json() as Promise<Product[]>
     },
   })
 }

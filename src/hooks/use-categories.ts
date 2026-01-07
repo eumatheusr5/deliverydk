@@ -1,20 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { supabase, getAccessToken } from '@/lib/supabase'
 import type { Category, CategoryInsert, CategoryUpdate } from '@/types/database'
 
 const CATEGORIES_KEY = ['categories']
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export function useCategories() {
   return useQuery({
     queryKey: CATEGORIES_KEY,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('sort_order', { ascending: true })
+      const token = getAccessToken()
+      const url = `${supabaseUrl}/rest/v1/categories?select=*&order=sort_order.asc`
 
-      if (error) throw error
-      return data as Category[]
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': token ? `Bearer ${token}` : `Bearer ${supabaseAnonKey}`,
+        },
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Erro ao buscar categorias')
+      }
+
+      return response.json() as Promise<Category[]>
     },
   })
 }

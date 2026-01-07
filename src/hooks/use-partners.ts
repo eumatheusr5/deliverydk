@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { supabase, getAccessToken } from '@/lib/supabase'
 import type { 
   Partner, 
   PartnerInsert, 
@@ -13,6 +13,8 @@ import type {
 } from '@/types/database'
 
 const PARTNERS_KEY = ['partners']
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 // =============================================
 // PARTNERS HOOKS
@@ -22,21 +24,29 @@ export function usePartners(status?: PartnerStatus | 'all') {
   return useQuery({
     queryKey: status ? [...PARTNERS_KEY, status] : PARTNERS_KEY,
     queryFn: async () => {
-      let query = supabase
-        .from('partners')
-        .select('*')
-        .order('created_at', { ascending: false })
+      const token = getAccessToken()
+      let url = `${supabaseUrl}/rest/v1/partners?select=*&order=created_at.desc`
 
       if (status && status !== 'all') {
-        query = query.eq('status', status)
+        url += `&status=eq.${status}`
       } else {
-        // Não mostrar deletados por padrão
-        query = query.neq('status', 'deleted')
+        url += `&status=neq.deleted`
       }
 
-      const { data, error } = await query
-      if (error) throw error
-      return (data as Partner[]) ?? []
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': token ? `Bearer ${token}` : `Bearer ${supabaseAnonKey}`,
+        },
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Erro ao buscar parceiros')
+      }
+
+      return response.json() as Promise<Partner[]>
     },
   })
 }

@@ -1,8 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { supabase, getAccessToken } from '@/lib/supabase'
 import type { Customer, CustomerInsert, CustomerUpdate, CustomerWithStats, Order } from '@/types/database'
 
 const CUSTOMERS_KEY = ['customers']
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 // Tipos para as queries
 type OrderStats = Pick<Order, 'customer_phone' | 'created_at'>
@@ -13,26 +15,36 @@ export function useCustomers() {
   return useQuery({
     queryKey: CUSTOMERS_KEY,
     queryFn: async () => {
-      // Busca clientes com estatísticas de pedidos
-      const { data: customers, error: customersError } = await supabase
-        .from('customers')
-        .select('*')
-        .order('name', { ascending: true })
+      const token = getAccessToken()
+      
+      // Busca clientes com fetch direto
+      const customersResponse = await fetch(`${supabaseUrl}/rest/v1/customers?select=*&order=name.asc`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': token ? `Bearer ${token}` : `Bearer ${supabaseAnonKey}`,
+        },
+      })
 
-      if (customersError) throw customersError
+      if (!customersResponse.ok) throw new Error('Erro ao buscar clientes')
+      const customers = await customersResponse.json() as Customer[]
 
-      // Busca estatísticas de pedidos para cada cliente (por telefone)
-      const { data: ordersStats, error: ordersError } = await supabase
-        .from('orders')
-        .select('customer_phone, created_at')
-        .order('created_at', { ascending: false })
+      // Busca estatísticas de pedidos
+      const ordersResponse = await fetch(`${supabaseUrl}/rest/v1/orders?select=customer_phone,created_at&order=created_at.desc`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': token ? `Bearer ${token}` : `Bearer ${supabaseAnonKey}`,
+        },
+      })
 
-      if (ordersError) throw ordersError
+      if (!ordersResponse.ok) throw new Error('Erro ao buscar pedidos')
+      const ordersStats = await ordersResponse.json() as OrderStats[]
 
       // Agrupa pedidos por telefone
       const ordersByPhone: Record<string, { count: number; lastOrderDate: string | null }> = {}
       
-      for (const order of (ordersStats as OrderStats[]) ?? []) {
+      for (const order of ordersStats ?? []) {
         const phone = order.customer_phone
         if (!ordersByPhone[phone]) {
           ordersByPhone[phone] = {
@@ -44,7 +56,7 @@ export function useCustomers() {
       }
 
       // Combina clientes com estatísticas
-      const customersWithStats: CustomerWithStats[] = ((customers as Customer[]) ?? []).map((customer) => {
+      const customersWithStats: CustomerWithStats[] = (customers ?? []).map((customer) => {
         const stats = ordersByPhone[customer.phone] || { count: 0, lastOrderDate: null }
         
         let daysSinceLastOrder: number | null = null
