@@ -13,8 +13,9 @@ import {
   Banknote,
   QrCode,
   User,
-  FileText,
   Receipt,
+  Eye,
+  ChevronDown,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -35,15 +36,17 @@ import {
   PAYMENT_METHOD_LABELS,
 } from '@/types/database'
 
-type FilterTab = 'active' | 'pending' | 'preparing' | 'delivering' | 'delivered' | 'cancelled'
+type FilterTab = 'all' | 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivering' | 'delivered' | 'cancelled'
 
-const FILTER_TABS: { key: FilterTab; label: string; icon: React.ReactNode }[] = [
-  { key: 'active', label: 'Ativos', icon: <Clock size={16} /> },
-  { key: 'pending', label: 'Pendentes', icon: <Clock size={16} /> },
-  { key: 'preparing', label: 'Preparando', icon: <ChefHat size={16} /> },
-  { key: 'delivering', label: 'Em entrega', icon: <Truck size={16} /> },
-  { key: 'delivered', label: 'Entregues', icon: <CheckCircle2 size={16} /> },
-  { key: 'cancelled', label: 'Cancelados', icon: <XCircle size={16} /> },
+const FILTER_TABS: { key: FilterTab; label: string }[] = [
+  { key: 'all', label: 'Todos' },
+  { key: 'pending', label: 'Pendentes' },
+  { key: 'confirmed', label: 'Confirmados' },
+  { key: 'preparing', label: 'Preparando' },
+  { key: 'ready', label: 'Pronto' },
+  { key: 'delivering', label: 'Em entrega' },
+  { key: 'delivered', label: 'Entregues' },
+  { key: 'cancelled', label: 'Cancelados' },
 ]
 
 const STATUS_FLOW: Record<OrderStatus, OrderStatus[]> = {
@@ -54,16 +57,6 @@ const STATUS_FLOW: Record<OrderStatus, OrderStatus[]> = {
   delivering: ['delivered'],
   delivered: [],
   cancelled: [],
-}
-
-const STATUS_ACTION_LABELS: Record<OrderStatus, string> = {
-  pending: 'Pendente',
-  confirmed: 'Confirmar',
-  preparing: 'Preparar',
-  ready: 'Pronto',
-  delivering: 'Saiu entrega',
-  delivered: 'Entregar',
-  cancelled: 'Cancelar',
 }
 
 function getPaymentIcon(method: string) {
@@ -80,109 +73,78 @@ function getPaymentIcon(method: string) {
 function getStatusIcon(status: OrderStatus) {
   switch (status) {
     case 'pending':
-      return <Clock size={16} />
+      return <Clock size={14} />
     case 'confirmed':
-      return <CheckCircle2 size={16} />
+      return <CheckCircle2 size={14} />
     case 'preparing':
-      return <ChefHat size={16} />
+      return <ChefHat size={14} />
     case 'ready':
-      return <Package size={16} />
+      return <Package size={14} />
     case 'delivering':
-      return <Truck size={16} />
+      return <Truck size={14} />
     case 'delivered':
-      return <CheckCircle2 size={16} />
+      return <CheckCircle2 size={14} />
     case 'cancelled':
-      return <XCircle size={16} />
+      return <XCircle size={14} />
   }
 }
 
-// Order Card Component
-function OrderCard({
-  order,
-  onViewDetails,
-}: {
-  order: Order
-  onViewDetails: (order: Order) => void
-}) {
+// Status Dropdown
+function StatusDropdown({ order }: { order: Order }) {
+  const [isOpen, setIsOpen] = useState(false)
   const updateStatus = useUpdateOrderStatus()
   const nextStatuses = STATUS_FLOW[order.status]
 
   const handleStatusChange = async (newStatus: OrderStatus) => {
+    setIsOpen(false)
     try {
       await updateStatus.mutateAsync({ id: order.id, status: newStatus })
-      toast.success(`Pedido #${order.order_number} atualizado para ${ORDER_STATUS_LABELS[newStatus]}`)
+      toast.success(`Pedido #${order.order_number} → ${ORDER_STATUS_LABELS[newStatus]}`)
     } catch {
       toast.error('Erro ao atualizar status')
     }
   }
 
+  if (nextStatuses.length === 0) {
+    return (
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${ORDER_STATUS_COLORS[order.status]}`}>
+        {getStatusIcon(order.status)}
+        {ORDER_STATUS_LABELS[order.status]}
+      </span>
+    )
+  }
+
   return (
-    <div className="bg-background border border-border rounded-xl overflow-hidden hover:shadow-md transition-shadow">
-      {/* Header */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold">#{order.order_number}</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ORDER_STATUS_COLORS[order.status]}`}>
-              {getStatusIcon(order.status)}
-              <span className="ml-1">{ORDER_STATUS_LABELS[order.status]}</span>
-            </span>
-          </div>
-          <span className="text-xs text-text-secondary">
-            {formatDistanceToNow(new Date(order.created_at), { addSuffix: true, locale: ptBR })}
-          </span>
-        </div>
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${ORDER_STATUS_COLORS[order.status]}`}
+      >
+        {getStatusIcon(order.status)}
+        {ORDER_STATUS_LABELS[order.status]}
+        <ChevronDown size={12} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
 
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1 text-text-secondary">
-            <User size={14} />
-            <span>{order.customer_name}</span>
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+          <div className="absolute top-full left-0 mt-1 bg-background border border-border rounded-lg shadow-lg z-20 min-w-[140px] py-1">
+            {nextStatuses.map((status) => (
+              <button
+                key={status}
+                onClick={() => handleStatusChange(status)}
+                className={`w-full px-3 py-2 text-left text-sm hover:bg-surface flex items-center gap-2 ${
+                  status === 'cancelled' ? 'text-error' : ''
+                }`}
+                disabled={updateStatus.isPending}
+              >
+                {getStatusIcon(status)}
+                {ORDER_STATUS_LABELS[status]}
+              </button>
+            ))}
           </div>
-          <div className="flex items-center gap-1 text-text-secondary">
-            {getPaymentIcon(order.payment_method)}
-            <span>{PAYMENT_METHOD_LABELS[order.payment_method]}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-sm text-text-secondary">
-            {order.delivery_type === 'delivery' ? (
-              <div className="flex items-center gap-1">
-                <MapPin size={14} />
-                <span className="truncate max-w-[200px]">{order.customer_address || 'Sem endereço'}</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1">
-                <Package size={14} />
-                <span>Retirada no local</span>
-              </div>
-            )}
-          </div>
-          <span className="text-lg font-bold text-success">{formatCurrency(order.total)}</span>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" className="flex-1 text-sm py-2" onClick={() => onViewDetails(order)}>
-            <FileText size={14} />
-            Detalhes
-          </Button>
-          {nextStatuses.map((status) => (
-            <Button
-              key={status}
-              variant={status === 'cancelled' ? 'secondary' : 'primary'}
-              className={`flex-1 text-sm py-2 ${status === 'cancelled' ? 'text-error hover:bg-error/10' : ''}`}
-              onClick={() => handleStatusChange(status)}
-              disabled={updateStatus.isPending}
-            >
-              {STATUS_ACTION_LABELS[status]}
-            </Button>
-          ))}
-        </div>
-      </div>
+        </>
+      )}
     </div>
   )
 }
@@ -328,7 +290,7 @@ function OrderDetailsModal({
                 onClick={() => handleStatusChange(status)}
                 disabled={updateStatus.isPending}
               >
-                {STATUS_ACTION_LABELS[status]}
+                {ORDER_STATUS_LABELS[status]}
               </Button>
             ))}
           </div>
@@ -338,45 +300,28 @@ function OrderDetailsModal({
   )
 }
 
-// Stats Cards
-function StatsCard({ label, value, icon, color }: { label: string; value: number; icon: React.ReactNode; color: string }) {
-  return (
-    <div className="bg-background border border-border rounded-xl p-4 flex items-center gap-4">
-      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${color}`}>
-        {icon}
-      </div>
-      <div>
-        <p className="text-2xl font-bold">{value}</p>
-        <p className="text-sm text-text-secondary">{label}</p>
-      </div>
-    </div>
-  )
-}
-
 export function OrdersPage() {
-  const [activeTab, setActiveTab] = useState<FilterTab>('active')
+  const [activeTab, setActiveTab] = useState<FilterTab>('all')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
 
-  const statusFilter = activeTab === 'active' ? 'active' : activeTab === 'preparing' ? undefined : activeTab
-  const { data: orders, isLoading } = useOrders(statusFilter as OrderStatus | 'active' | undefined)
+  const { data: allOrders, isLoading } = useOrders()
 
-  // Filter preparing to include both confirmed and preparing
-  const filteredOrders = activeTab === 'preparing'
-    ? orders?.filter(o => ['confirmed', 'preparing'].includes(o.status))
-    : activeTab === 'delivering'
-    ? orders?.filter(o => ['ready', 'delivering'].includes(o.status))
-    : orders
+  // Filter orders based on tab
+  const filteredOrders = activeTab === 'all' 
+    ? allOrders 
+    : allOrders?.filter(o => o.status === activeTab)
 
   const handleViewDetails = (order: Order) => {
     setSelectedOrder(order)
     setIsDetailsOpen(true)
   }
 
-  // Stats
-  const pendingCount = orders?.filter(o => o.status === 'pending').length ?? 0
-  const preparingCount = orders?.filter(o => ['confirmed', 'preparing'].includes(o.status)).length ?? 0
-  const deliveringCount = orders?.filter(o => ['ready', 'delivering'].includes(o.status)).length ?? 0
+  // Count per status
+  const getCount = (status: FilterTab) => {
+    if (status === 'all') return allOrders?.length ?? 0
+    return allOrders?.filter(o => o.status === status).length ?? 0
+  }
 
   return (
     <div className="space-y-6">
@@ -386,49 +331,39 @@ export function OrdersPage() {
         <p className="text-text-secondary mt-1">Gerencie os pedidos do seu estabelecimento</p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatsCard
-          label="Pendentes"
-          value={pendingCount}
-          icon={<Clock size={24} className="text-warning" />}
-          color="bg-warning/10"
-        />
-        <StatsCard
-          label="Em preparo"
-          value={preparingCount}
-          icon={<ChefHat size={24} className="text-purple-600" />}
-          color="bg-purple-100"
-        />
-        <StatsCard
-          label="Em entrega"
-          value={deliveringCount}
-          icon={<Truck size={24} className="text-accent" />}
-          color="bg-accent/10"
-        />
-      </div>
-
       {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {FILTER_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`
-              flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors
-              ${activeTab === tab.key
-                ? 'bg-primary text-white'
-                : 'bg-surface text-text-secondary hover:bg-border'
-              }
-            `}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex gap-1 overflow-x-auto pb-2 border-b border-border">
+        {FILTER_TABS.map((tab) => {
+          const count = getCount(tab.key)
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`
+                px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors relative
+                ${activeTab === tab.key
+                  ? 'text-primary'
+                  : 'text-text-secondary hover:text-text-primary'
+                }
+              `}
+            >
+              {tab.label}
+              {count > 0 && (
+                <span className={`ml-1.5 px-1.5 py-0.5 text-xs rounded-full ${
+                  activeTab === tab.key ? 'bg-primary text-white' : 'bg-surface'
+                }`}>
+                  {count}
+                </span>
+              )}
+              {activeTab === tab.key && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
+          )
+        })}
       </div>
 
-      {/* Orders Grid */}
+      {/* Table */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Spinner size={32} />
@@ -444,10 +379,103 @@ export function OrdersPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filteredOrders?.map((order) => (
-            <OrderCard key={order.id} order={order} onViewDetails={handleViewDetails} />
-          ))}
+        <div className="bg-background border border-border rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-surface border-b border-border">
+                  <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3">
+                    Pedido
+                  </th>
+                  <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3">
+                    Data
+                  </th>
+                  <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3">
+                    Cliente
+                  </th>
+                  <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3 hidden md:table-cell">
+                    Tipo
+                  </th>
+                  <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
+                    Pagamento
+                  </th>
+                  <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3">
+                    Status
+                  </th>
+                  <th className="text-right text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3">
+                    Total
+                  </th>
+                  <th className="text-center text-xs font-medium text-text-secondary uppercase tracking-wider px-4 py-3 w-12">
+                    
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredOrders?.map((order) => (
+                  <tr key={order.id} className="hover:bg-surface/50 transition-colors">
+                    {/* Order Number */}
+                    <td className="px-4 py-3">
+                      <span className="font-semibold">#{order.order_number}</span>
+                    </td>
+
+                    {/* Date */}
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-text-secondary">
+                        {formatDistanceToNow(new Date(order.created_at), { addSuffix: true, locale: ptBR })}
+                      </span>
+                    </td>
+
+                    {/* Customer */}
+                    <td className="px-4 py-3">
+                      <div>
+                        <p className="font-medium text-sm">{order.customer_name}</p>
+                        <p className="text-xs text-text-secondary">{order.customer_phone}</p>
+                      </div>
+                    </td>
+
+                    {/* Type */}
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      <span className={`inline-flex items-center gap-1 text-xs ${
+                        order.delivery_type === 'delivery' ? 'text-accent' : 'text-text-secondary'
+                      }`}>
+                        {order.delivery_type === 'delivery' ? <Truck size={12} /> : <Package size={12} />}
+                        {order.delivery_type === 'delivery' ? 'Entrega' : 'Retirada'}
+                      </span>
+                    </td>
+
+                    {/* Payment */}
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      <span className="inline-flex items-center gap-1.5 text-xs text-text-secondary">
+                        {getPaymentIcon(order.payment_method)}
+                        {PAYMENT_METHOD_LABELS[order.payment_method]}
+                      </span>
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-4 py-3">
+                      <StatusDropdown order={order} />
+                    </td>
+
+                    {/* Total */}
+                    <td className="px-4 py-3 text-right">
+                      <span className="font-semibold text-success">{formatCurrency(order.total)}</span>
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => handleViewDetails(order)}
+                        className="p-2 text-text-secondary hover:text-primary hover:bg-surface rounded-lg transition-colors"
+                        title="Ver detalhes"
+                      >
+                        <Eye size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -456,4 +484,3 @@ export function OrdersPage() {
     </div>
   )
 }
-
